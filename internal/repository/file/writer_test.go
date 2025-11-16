@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/gustavo-silva98/adnotes/internal/repository/file"
@@ -144,19 +145,27 @@ func FTSTableExists(db *file.SqliteHandler) (bool, error) {
 }
 
 func TestCreateFTSTable(t *testing.T) {
-	db, _ := sql.Open("sqlite", "teste_db.db")
+	db, err := sql.Open("sqlite", "teste_db.db")
+	if err != nil {
+		t.Errorf("Erro ao criar o BD teste - Err: %v", err)
+	}
+
 	handler := &file.SqliteHandler{
 		DbPath:    "teste_db.db",
 		TableName: "teste_notas",
 		DB:        db,
 	}
 
-	err := handler.CreateFTSTable()
+	err = handler.CreateFTSTable()
 	if err != nil {
+		db.Close()
+		os.Remove("teste_db.db")
 		log.Fatalf("Erro ao criar tabela FTS: %v", err)
 	}
 	exists, err := FTSTableExists(handler)
 	if err != nil {
+		db.Close()
+		os.Remove("teste_db.db")
 		log.Fatalf("Erro ao verificar tabela FTS: %v", err)
 	}
 
@@ -165,6 +174,12 @@ func TestCreateFTSTable(t *testing.T) {
 	} else {
 		log.Println("Tabela FTS não foi criada")
 	}
+	db.Close()
+	err = os.Remove("teste_db.db")
+	if err != nil {
+		t.Errorf("Erro ao remover arquivos de teste: %v", err)
+	}
+
 }
 
 func TriggerExists(db *file.SqliteHandler, triggerName string) (bool, error) {

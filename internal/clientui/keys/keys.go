@@ -7,6 +7,7 @@ import (
 type KeyMap struct {
 	Save       key.Binding
 	Up         key.Binding
+	Down       key.Binding
 	Quit       key.Binding
 	Esc        key.Binding
 	Help       key.Binding
@@ -25,6 +26,7 @@ var Default = KeyMap{
 	Save:       key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "Save and Quit")),
 	Esc:        key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "unfocus textarea")),
 	Up:         key.NewBinding(key.WithKeys("up", "k"), key.WithHelp("^k", "Move Up")),
+	Down:       key.NewBinding(key.WithKeys("down", "j"), key.WithHelp("^j", "Move Up")),
 	Help:       key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "toggle help")),
 	Quit:       key.NewBinding(key.WithKeys("ctrl+q", "esc", "ctrl+q"), key.WithHelp("Ctrl+q", "quit")),
 	Read:       key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("ctrl+r", "Read notes")),

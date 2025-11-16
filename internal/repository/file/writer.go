@@ -17,6 +17,7 @@ type Writer interface {
 	UpdateEditNoteRepository(ctx context.Context, note Note) (int64, error)
 	DeleteNoteRepository(ctx context.Context, noteId int) (int64, error)
 	FullSearchNote(ctx context.Context, argQuery string) (map[int]Note, error)
+	GetTotalCount(ctx context.Context) (int, error)
 }
 
 type SqliteHandler struct {
@@ -111,7 +112,7 @@ func (s SqliteHandler) QueryNote(limit int, offset int, ctx context.Context) (ma
 
 func WriteLog(msg string, logFilePath string) {
 	if logFilePath == "" {
-		logFilePath = filepath.Join("..", "/data/banco.db")
+		logFilePath = filepath.Join("..", "/data/logs.txt")
 	}
 
 	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
@@ -127,7 +128,7 @@ func WriteLog(msg string, logFilePath string) {
 	log.Println(msg)
 }
 
-func (s SqliteHandler) GetFirsIndexPage(ctx context.Context) (int, error) {
+func (s SqliteHandler) GetTotalCount(ctx context.Context) (int, error) {
 	row, err := s.DB.QueryContext(
 		ctx,
 		fmt.Sprintf(`SELECT COUNT(*) FROM %v`, s.TableName),
@@ -142,9 +143,6 @@ func (s SqliteHandler) GetFirsIndexPage(ctx context.Context) (int, error) {
 		if err := row.Scan(&count); err != nil {
 			return 0, nil
 		}
-	}
-	if count < 10 {
-		return 10, nil
 	}
 	return count, nil
 }
