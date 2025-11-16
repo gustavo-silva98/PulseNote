@@ -27,6 +27,7 @@ const (
 	FinishServerState
 	InitServerState
 	FullSearchNoteState
+	SaveNewNoteState
 )
 
 type Model struct {
