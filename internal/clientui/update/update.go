@@ -21,12 +21,24 @@ import (
 // var termWidth, termHeight, _ = term.GetSize(os.Stdout.Fd())
 var ctx = context.Background()
 
+const PageSize = 10
+
 // Mensagem para timeout do resultado da edição
 type resultEditTimeoutMsg struct{}
 type resultKillTimeoutMsg struct{}
 type fullSearchDebounceMsg struct{}
+type noteItem struct {
+	title, desc  string
+	NoteText     string
+	Id           int
+	Reminder     int
+	PlusReminder int
+}
 
-const PageSize = 50
+func (i noteItem) Title() string       { return i.title }
+func (i noteItem) Description() string { return i.desc }
+func (i noteItem) FilterValue() string { return i.title }
+func (i noteItem) IdValue() int        { return i.Id }
 
 func Update(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -167,50 +179,45 @@ func updateInsertNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 
 }
 
-type noteItem struct {
-	title, desc  string
-	NoteText     string
-	Id           int
-	Reminder     int
-	PlusReminder int
-}
-
-func (i noteItem) Title() string       { return i.title }
-func (i noteItem) Description() string { return i.desc }
-func (i noteItem) FilterValue() string { return i.title }
-func (i noteItem) IdValue() int        { return i.Id }
-
-func queryMapNotes(m *model.Model) []list.Item {
-	mapQuery, err := m.DB.QueryNote(PageSize, (m.CurrentPage-1)*PageSize, m.Context)
-	if err != nil {
-		file.WriteLog(err.Error(), m.LogPath)
-	}
-	m.MapNotes = mapQuery
-
-	var ids []int
-	for id := range m.MapNotes {
-		ids = append(ids, id)
-	}
-	sort.Sort(sort.Reverse(sort.IntSlice(ids)))
-
-	items := make([]list.Item, 0, len(mapQuery))
-	for _, id := range ids {
-		note := m.MapNotes[id]
-		noteTimestamp := time.Unix(note.Hour, 0)
-		items = append(items, noteItem{
-			title:        titleFormatter(note.NoteText),
-			desc:         fmt.Sprintf("%v/%d/%v %v:%02d", noteTimestamp.Day(), noteTimestamp.Month(), noteTimestamp.Year(), noteTimestamp.Hour(), noteTimestamp.Minute()),
-			NoteText:     note.NoteText,
-			Id:           id,
-			Reminder:     0,
-			PlusReminder: 0,
-		})
-	}
-	return items
-}
-
 func updateReadNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	var cmds []tea.Cmd
+
+	totalPages, hasNextPage, hasPrevPage := getPaginationInfo(m)
+	paginateUp := false
+	paginateDown := false
+
+	file.WriteLog(fmt.Sprintf("Current Page = %v", m.CurrentPage), "")
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if key.Matches(keyMsg, m.Keys.Down) {
+			if m.ListModel.Index() == PageSize-1 {
+				file.WriteLog("Apertou Down", "")
+				file.WriteLog(fmt.Sprintf("Current Page = %v", m.CurrentPage), "")
+				if hasNextPage {
+					m.CurrentPage += 1
+
+					// Atualiza a lista de itens.
+					m.ItemList = queryMapNotes(m)
+					m.ListModel.SetItems(m.ItemList)
+					paginateDown = true
+				}
+			}
+		}
+		if key.Matches(keyMsg, m.Keys.Up) {
+			if m.ListModel.Index() == 0 && m.CurrentPage != 1 {
+				file.WriteLog("Apertou Down", "")
+				file.WriteLog(fmt.Sprintf("Current Page = %v", m.CurrentPage), "")
+				if hasPrevPage {
+					m.CurrentPage -= 1
+				}
+
+				// Atualiza a lista de itens.
+				m.ItemList = queryMapNotes(m)
+				m.ListModel.SetItems(m.ItemList)
+				paginateUp = true
+			}
+		}
+	}
 
 	// Só recarregue a lista se ItemList estiver vazia (primeira vez) ou se mudar de página
 	if len(m.ItemList) == 0 {
@@ -225,7 +232,6 @@ func updateReadNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 
 		l := list.New(m.ItemList, d, m.TermWidth/3, m.TermHeight-3)
 		l.Styles.Title = l.Styles.Title.Background(lipgloss.Color("#9D2EB0")).Foreground(lipgloss.Color("#E0D9F6"))
-		l.Title = "Notas"
 		l.SetShowHelp(false)
 
 		m.ListModel = l
@@ -233,8 +239,8 @@ func updateReadNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 	m.ListModel.SetSize(m.TermWidth/2, m.TermHeight-5)
 	m.TextareaEdit.SetHeight(m.TermHeight - 5)
 	m.TextareaEdit.SetWidth(m.TermWidth - m.ListModel.Width() - 2)
+	m.ListModel.Title = fmt.Sprintf("Notas (%v/%v)", m.CurrentPage, totalPages)
 
-	var cmd tea.Cmd
 	m.ListModel, cmd = m.ListModel.Update(msg)
 	cmds = append(cmds, cmd)
 
@@ -269,6 +275,12 @@ func updateReadNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 				cmds = append(cmds, cmd)
 			}
 		}
+	}
+	if paginateDown {
+		m.ListModel.Select(0)
+	}
+	if paginateUp {
+		m.ListModel.Select(PageSize - 1)
 	}
 	return *m, tea.Batch(cmds...)
 }
@@ -547,6 +559,47 @@ func FullSearchQueryMapNotes(m *model.Model) []list.Item {
 	mapQuery, err := m.DB.FullSearchNote(m.Context, m.FullSearchQuery)
 	if err != nil {
 		return []list.Item{}
+	}
+	m.MapNotes = mapQuery
+
+	var ids []int
+	for id := range m.MapNotes {
+		ids = append(ids, id)
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(ids)))
+
+	items := make([]list.Item, 0, len(mapQuery))
+	for _, id := range ids {
+		note := m.MapNotes[id]
+		noteTimestamp := time.Unix(note.Hour, 0)
+		items = append(items, noteItem{
+			title:        titleFormatter(note.NoteText),
+			desc:         fmt.Sprintf("%v/%d/%v %v:%02d", noteTimestamp.Day(), noteTimestamp.Month(), noteTimestamp.Year(), noteTimestamp.Hour(), noteTimestamp.Minute()),
+			NoteText:     note.NoteText,
+			Id:           id,
+			Reminder:     0,
+			PlusReminder: 0,
+		})
+	}
+	return items
+}
+
+func getPaginationInfo(m *model.Model) (totalPages int, hasNextPage bool, hasPrevPage bool) {
+	totalRows, _ := m.DB.GetTotalCount(m.Context)
+	totalPages = (totalRows + PageSize - 1) / PageSize
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	hasNextPage = m.CurrentPage < totalPages
+	hasPrevPage = m.CurrentPage > 1
+
+	return totalPages, hasNextPage, hasPrevPage
+}
+
+func queryMapNotes(m *model.Model) []list.Item {
+	mapQuery, err := m.DB.QueryNote(PageSize, (m.CurrentPage-1)*PageSize, m.Context)
+	if err != nil {
+		file.WriteLog(err.Error(), m.LogPath)
 	}
 	m.MapNotes = mapQuery
 

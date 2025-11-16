@@ -122,10 +122,7 @@ func New() Model {
 
 	textEdit := NewTextAreaEdit()
 	textareaSearch := NewTextAreaSearch()
-	firstIndex, err := sql.GetFirsIndexPage(ctx)
-	if err != nil {
-		file.WriteLog("GET INDEX ERROR: "+err.Error(), dbPath)
-	}
+	firstIndex := 0
 	return Model{
 		State:           InsertNoteState,
 		Textarea:        ti,
