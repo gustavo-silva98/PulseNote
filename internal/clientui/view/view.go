@@ -64,6 +64,8 @@ func View(m model.Model) string {
 		output = InitServerView(m)
 	case model.FullSearchNoteState:
 		output = FullSearchNoteView(m)
+	case model.SaveNewNoteState:
+		output = ResultEditModalOverlay(m, m.ResultMessage)
 	}
 
 	return output

@@ -27,6 +27,7 @@ const PageSize = 10
 type resultEditTimeoutMsg struct{}
 type resultKillTimeoutMsg struct{}
 type fullSearchDebounceMsg struct{}
+type resultSaveNewNote struct{}
 type noteItem struct {
 	title, desc  string
 	NoteText     string
@@ -52,6 +53,8 @@ func Update(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 
 		return *m, nil
 	case resultKillTimeoutMsg:
+		return *m, tea.Quit
+	case resultSaveNewNote:
 		return *m, tea.Quit
 	case tea.KeyMsg:
 		switch {
@@ -80,6 +83,8 @@ func Update(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 		return UpdateInitServerState(msg, m)
 	case model.FullSearchNoteState:
 		return UpdateSearchNotes(msg, m)
+	case model.SaveNewNoteState:
+		return updateResultSaveNewNote(msg, m)
 	}
 	return *m, nil
 }
@@ -116,6 +121,13 @@ func updateResultKillServerState(_ tea.Msg, m *model.Model) (model.Model, tea.Cm
 	})
 }
 
+func updateResultSaveNewNote(_ tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
+	// retorna o cmd que vai enviar resultEditTimeoutMsg após 500ms
+	return *m, tea.Tick(1000*time.Millisecond, func(t time.Time) tea.Msg {
+		return resultSaveNewNote{}
+	})
+}
+
 func UpdateInitServerState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
@@ -148,10 +160,8 @@ func updateInsertNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 			if err != nil {
 				file.WriteLog(err.Error(), m.LogPath)
 			}
-			time.Sleep(500 * time.Millisecond)
-			m.Quitting = true
-			return *m, tea.Quit
-
+			m.ResultMessage = "Note saved successfully!"
+			m.State = model.SaveNewNoteState
 		case key.Matches(msg, m.Keys.Esc):
 			if m.Textarea.Focused() {
 				m.Textarea.Blur()
