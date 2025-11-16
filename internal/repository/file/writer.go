@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	_ "modernc.org/sqlite"
 )
@@ -108,20 +109,22 @@ func (s SqliteHandler) QueryNote(limit int, offset int, ctx context.Context) (ma
 
 }
 
-func WriteTxt(msg string) {
-	f, err := os.OpenFile("notes.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatalf("Erro ao abrir o arquivo: %v", err)
+func WriteLog(msg string, logFilePath string) {
+	if logFilePath == "" {
+		logFilePath = filepath.Join("..", "/data/banco.db")
 	}
 
-	defer f.Close()
-
-	_, err = f.WriteString(msg + "\n")
+	file, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		log.Fatalf("Erro ao escrever no arquivo: %v", err)
+		log.Panic(err)
 	}
+	defer file.Close()
 
-	log.Println("Arquivo escrito com sucesso")
+	log.SetOutput(file)
+
+	log.SetFlags(log.LstdFlags)
+
+	log.Println(msg)
 }
 
 func (s SqliteHandler) GetFirsIndexPage(ctx context.Context) (int, error) {

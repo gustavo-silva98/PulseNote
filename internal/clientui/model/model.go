@@ -34,19 +34,14 @@ type Model struct {
 	Textarea              textarea.Model
 	Help                  help.Model
 	Keys                  keys.KeyMap
-	InputStyle            lipgloss.Style
-	Err                   error
 	Quitting              bool
 	MapNotes              map[int]file.Note
 	IndexQuery            int
 	Context               context.Context
 	DB                    file.Writer
-	TotalItemsNote        int
 	ListModel             list.Model
 	ItemList              []list.Item
 	CurrentPage           int
-	ViewpoerContent       string
-	Ready                 bool
 	TextareaEdit          textarea.Model
 	HelpKeys              []key.Binding
 	SelectedNote          list.Item
@@ -57,6 +52,7 @@ type Model struct {
 	FullSearchBool        bool
 	FullSearchQuery       string
 	FullSearchTimerCancel chan struct{}
+	LogPath               string
 }
 
 func NewTextAreaEdit() textarea.Model {
@@ -128,21 +124,20 @@ func New() Model {
 	textareaSearch := NewTextAreaSearch()
 	firstIndex, err := sql.GetFirsIndexPage(ctx)
 	if err != nil {
-		file.WriteTxt("GET INDEX ERROR: " + err.Error())
+		file.WriteLog("GET INDEX ERROR: "+err.Error(), dbPath)
 	}
 	return Model{
 		State:           InsertNoteState,
 		Textarea:        ti,
 		Help:            help.New(),
 		Keys:            keys.Default,
-		InputStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("#FF75B7")),
 		IndexQuery:      firstIndex,
-		TotalItemsNote:  firstIndex,
 		Context:         ctx,
 		DB:              sql,
 		CurrentPage:     1,
 		TextareaEdit:    textEdit,
 		TextAreaSearch:  textareaSearch,
 		FullSearchQuery: "",
+		LogPath:         dbPath,
 	}
 }

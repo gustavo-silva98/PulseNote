@@ -134,7 +134,7 @@ func updateInsertNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 
 			_, err := m.DB.InsertNote(&noteExample, ctx)
 			if err != nil {
-				file.WriteTxt(err.Error())
+				file.WriteLog(err.Error(), m.LogPath)
 			}
 			time.Sleep(500 * time.Millisecond)
 			m.Quitting = true
@@ -183,7 +183,7 @@ func (i noteItem) IdValue() int        { return i.Id }
 func queryMapNotes(m *model.Model) []list.Item {
 	mapQuery, err := m.DB.QueryNote(PageSize, (m.CurrentPage-1)*PageSize, m.Context)
 	if err != nil {
-		file.WriteTxt(err.Error())
+		file.WriteLog(err.Error(), m.LogPath)
 	}
 	m.MapNotes = mapQuery
 
