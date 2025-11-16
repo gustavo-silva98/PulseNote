@@ -1,6 +1,10 @@
 # PulseNote 
 Um aplicativo simples de interface de texto (TUI) para gerenciar notas diretamente no terminal, desenvolvido em Go.
 
+![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
+
+
+
 ## 📸 Demonstração
 docs/demo.gif  
 ###*(Adicionar GIF posteriormente.)*
@@ -12,6 +16,7 @@ docs/demo.gif
 - Hotkeys para ativação de funcionalidades.
 - Interface amigável no terminal.
 - Armazenamento local simples (SQLite).
+- Pesquisa de notas otimizada utilizando FTS.
 
 ---
 
@@ -22,11 +27,26 @@ docs/demo.gif
 
 ### Passos
 ```bash
-git clone https://github.com/gustavo-silva98/ADNoteS
-cd ADNoteS
+git clone https://github.com/gustavo-silva98/PulseNote
+cd PulseNote
 go run ./install/install.go
 cd ..
 ./bin/server.exe
 ```
 ---
+### 🎇 HotKeys 
+- Ctrl + Shift + H -> Salvar Notas
+- Ctrl + Shift + R -> Ler Notas
+- Ctrl + Shift + K -> Finalizar Server
+- Ctrl + Shift + D -> Busca avançada
 
+---
+### 🛠 Tecnologias Utilizadas
+- Go
+- Bubbletea TUI Framework
+- Lipgloss
+- Hotkey
+- SQLite
+
+### 📄 Licença
+Este projeto está sob a licença MIT.
