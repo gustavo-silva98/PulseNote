@@ -115,7 +115,7 @@ func New() Model {
 	ti := textarea.New()
 	ti.Placeholder = "Digite sua nota..."
 	ti.Focus()
-	ti.ShowLineNumbers = false
+	ti.ShowLineNumbers = true
 	ctx := context.Background()
 	os.Mkdir(filepath.Join("..", "data"), os.ModePerm)
 	dbPath := filepath.Join("..", "/data/banco.db")

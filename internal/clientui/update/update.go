@@ -170,6 +170,10 @@ func updateInsertNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 			}
 		case key.Matches(msg, m.Keys.FullSearch):
 			m.State = model.FullSearchNoteState
+			m.TextAreaSearch.SetWidth(m.TermWidth/2 - 4)
+			m.TextAreaSearch.SetHeight(1)
+			m.TextareaEdit.SetHeight(m.TermHeight - 5)
+			m.TextareaEdit.SetWidth(m.TermWidth - m.ListModel.Width() - 4)
 		case key.Matches(msg, m.Keys.Quit):
 			m.Quitting = true
 			return *m, tea.Quit
@@ -279,6 +283,11 @@ func updateReadNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 			m.State = model.DeleteNoteState
 		case key.Matches(msg, m.Keys.FullSearch):
 			m.State = model.FullSearchNoteState
+			m.TextAreaSearch.SetWidth(m.TermWidth/2 - 4)
+			m.TextAreaSearch.SetHeight(1)
+			m.ListModel.SetSize(m.TermWidth/2, m.TermHeight-5)
+			m.TextareaEdit.SetHeight(m.TermHeight - 5)
+			m.TextareaEdit.SetWidth(m.TermWidth - m.ListModel.Width() - 4)
 		case key.Matches(msg, m.Keys.Enter):
 			// Ao entrar no modo de edição, inicialize e foque o TextareaEdit
 			m.State = model.EditNoteSate
@@ -300,8 +309,10 @@ func updateReadNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 func updateEditNoteFunc(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	// Atualize o TextareaEdit com o evento recebido
 	var cmd tea.Cmd
+	m.ListModel.SetSize(m.TermWidth/2, m.TermHeight-5)
+	m.TextareaEdit.SetHeight(m.TermHeight - 5)
+	m.TextareaEdit.SetWidth(m.TermWidth - m.ListModel.Width() - 2)
 
 	m.TextareaEdit, cmd = m.TextareaEdit.Update(msg)
 	cmds = append(cmds, cmd)
@@ -444,7 +455,6 @@ func helpMaker(m *model.Model) []key.Binding {
 		return []key.Binding{
 			b("Ctrl + q", "Close Window"),
 			b("Ctrl + r", "Read Notes"),
-			b("Alt + ←", "Insert Note"),
 		}
 	}
 	return []key.Binding{}
@@ -476,7 +486,9 @@ func UpdateSearchNotes(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
+	isNavigating := false
 	oldValue := m.TextAreaSearch.Value()
+
 	m.TextAreaSearch.SetWidth(m.TermWidth/2 - 4)
 	m.TextAreaSearch.SetHeight(1)
 
@@ -488,18 +500,25 @@ func UpdateSearchNotes(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 		d.Styles.NormalTitle = d.Styles.NormalTitle.Foreground(lipgloss.Color("#9a6bf8ff")).Faint(true)
 		d.Styles.SelectedDesc = d.Styles.SelectedDesc.Foreground(c1).BorderLeftForeground(c)
 		d.Styles.NormalDesc = d.Styles.NormalDesc.Foreground(lipgloss.Color("#f2c9faff")).Faint(true)
-		l := list.New(m.ItemList, d, m.TermWidth/3, m.TermHeight-10)
+		l := list.New(m.ItemList, d, m.TermWidth/2, m.TermHeight-5)
 		l.Styles.Title = l.Styles.Title.Background(lipgloss.Color("#9D2EB0")).Foreground(lipgloss.Color("#E0D9F6"))
 		l.Title = "Resultados da Busca"
 		l.SetShowHelp(false)
 		m.ListModel = l
+		m.ListModel.SetSize(m.TermWidth/2, m.TermHeight-5)
+		m.TextareaEdit.SetHeight(m.TermHeight - 5)
+		m.TextareaEdit.SetWidth(m.TermWidth - m.ListModel.Width() - 4)
+	} else {
+
+		m.ListModel.SetSize(m.TermWidth/2, m.TermHeight-5)
+		m.TextareaEdit.SetHeight(m.TermHeight - 5)
+		m.TextareaEdit.SetWidth(m.TermWidth - m.ListModel.Width() - 4)
 	}
 
 	if !m.FullSearchBool {
 		m.TextAreaSearch.Placeholder = "Digite sua busca aqui..."
 		m.TextAreaSearch.Focus()
 		m.TextareaEdit.Blur()
-		m.TextareaEdit.SetValue("")
 	}
 
 	switch msg := msg.(type) {
@@ -508,24 +527,30 @@ func UpdateSearchNotes(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 		case key.Matches(msg, m.Keys.Quit):
 			m.Quitting = true
 			return *m, tea.Quit
-		case key.Matches(msg, m.Keys.PageBack):
-			if m.FullSearchTimerCancel != nil {
-				close(m.FullSearchTimerCancel)
-			}
-			m.State = model.ReadNotesState
 		case key.Matches(msg, m.Keys.Read):
 			m.State = model.ReadNotesState
-		default:
-			m.FullSearchBool = false
-			if m.TextAreaSearch.Value() != m.FullSearchQuery {
-				m.FullSearchQuery = m.TextAreaSearch.Value()
-				cmds = append(cmds, debouncerFullSearchNote(m, 500*time.Millisecond))
+		case key.Matches(msg, m.Keys.Up, m.Keys.Down):
+			if !m.TextAreaSearch.Focused() {
+				isNavigating = true
 			}
-			switch {
-			case !m.TextAreaSearch.Focused():
-				m.TextAreaSearch.Focus()
-				m.TextareaEdit.SetValue("")
-				m.TextareaEdit.Blur()
+		case key.Matches(msg, m.Keys.Enter):
+			m.State = model.EditNoteSate
+			if !m.TextareaEdit.Focused() {
+				cmd = m.TextareaEdit.Focus()
+				cmds = append(cmds, cmd)
+			}
+		default:
+			if !isNavigating {
+				m.FullSearchBool = false
+				if m.TextAreaSearch.Value() != m.FullSearchQuery {
+					m.FullSearchQuery = m.TextAreaSearch.Value()
+					cmds = append(cmds, debouncerFullSearchNote(m, 500*time.Millisecond))
+				}
+				if !m.TextAreaSearch.Focused() {
+					m.TextAreaSearch.Focus()
+					m.TextareaEdit.SetValue("")
+					m.TextareaEdit.Blur()
+				}
 			}
 		}
 	case fullSearchDebounceMsg:
@@ -534,18 +559,37 @@ func UpdateSearchNotes(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 		m.ItemList = FullSearchQueryMapNotes(m)
 		m.ListModel.SetItems(m.ItemList)
 	}
+	if !isNavigating {
+		m.TextAreaSearch, cmd = m.TextAreaSearch.Update(msg)
+		cmds = append(cmds, cmd)
 
-	m.TextAreaSearch, cmd = m.TextAreaSearch.Update(msg)
-	cmds = append(cmds, cmd)
-
-	newValue := m.TextAreaSearch.Value()
-	if newValue != oldValue && newValue != m.FullSearchQuery {
-		m.FullSearchQuery = newValue
-		cmds = append(cmds, debouncerFullSearchNote(m, 500*time.Millisecond))
+		newValue := m.TextAreaSearch.Value()
+		if newValue != oldValue && newValue != m.FullSearchQuery {
+			m.FullSearchQuery = newValue
+			cmds = append(cmds, debouncerFullSearchNote(m, 500*time.Millisecond))
+		}
 	}
 
 	m.ListModel, cmd = m.ListModel.Update(msg)
 	cmds = append(cmds, cmd)
+
+	if selected := m.ListModel.SelectedItem(); selected != nil {
+		if note, ok := selected.(noteItem); ok {
+			wrapped := wordwrap.String(fmt.Sprintf("%v", note.NoteText), m.TextareaEdit.Width())
+			// Só atualize o valor se for diferente do atual
+			if m.TextareaEdit.Value() != wrapped {
+				m.TextareaEdit.SetValue(wrapped)
+			}
+		}
+	} else {
+		if m.TextareaEdit.Value() != "" {
+			m.TextareaEdit.SetValue("")
+		}
+	}
+
+	m.TextareaEdit, cmd = m.TextareaEdit.Update(tea.KeyMsg{Type: tea.KeyNull})
+	cmds = append(cmds, cmd)
+
 	return *m, tea.Batch(cmds...)
 }
 
