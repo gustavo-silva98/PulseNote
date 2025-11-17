@@ -1,7 +1,8 @@
 # PulseNote 
 Um aplicativo simples de interface de texto (TUI) para gerenciar notas diretamente no terminal, desenvolvido em Go.
 
-![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
+![Codecov](https://img.shields.io/badge/build-passing-green)
 
 ## 📸 Demonstração
 
