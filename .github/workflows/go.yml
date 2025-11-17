@@ -38,6 +38,8 @@ jobs:
         }
         Write-Host "coverage.txt criado e contém dados."
 
+    - name: List files
+      run: dir
 
     - name: Upload results to Codecov
       uses: codecov/codecov-action@v5
