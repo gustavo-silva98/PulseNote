@@ -3,11 +3,11 @@ Um aplicativo simples de interface de texto (TUI) para gerenciar notas diretamen
 
 ![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
-
-
 ## 📸 Demonstração
-docs/demo.gif  
-###*(Adicionar GIF posteriormente.)*
+
+<div align=center style="width:500px; height:200px; overflow:hidden; border-radius:15px; margin:auto;">
+  <img src="assets/Gif Completo ffmpeg.gif" alt="GIF com bordas arredondadas" style="border-radius:15px;" />
+</div>
 
 ---
 
