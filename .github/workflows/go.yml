@@ -25,17 +25,19 @@ jobs:
     - name: Run Rests and Create coverage report
       run: go test ./... -coverprofile=coverage.txt -covermode=atomic
     
+
     - name: Check coverage file
       run: |
-        if [ ! -f coverage.txt ]; then
-          echo "coverage.txt não existe!"
+        if (!(Test-Path "coverage.txt")) {
+          Write-Host "coverage.txt não existe!"
           exit 1
-        fi
-        
-        if [ ! -s coverage.txt ]; then
-          echo "coverage.txt está vazio!"
+        }
+        if ((Get-Item "coverage.txt").Length -eq 0) {
+          Write-Host "coverage.txt está vazio!"
           exit 1
-        fi
+        }
+        Write-Host "coverage.txt criado e contém dados."
+
 
     - name: Upload results to Codecov
       uses: codecov/codecov-action@v5
