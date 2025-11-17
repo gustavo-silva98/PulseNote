@@ -203,12 +203,9 @@ func updateReadNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 	paginateUp := false
 	paginateDown := false
 
-	file.WriteLog(fmt.Sprintf("Current Page = %v", m.CurrentPage), "")
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		if key.Matches(keyMsg, m.Keys.Down) {
 			if m.ListModel.Index() == PageSize-1 {
-				file.WriteLog("Apertou Down", "")
-				file.WriteLog(fmt.Sprintf("Current Page = %v", m.CurrentPage), "")
 				if hasNextPage {
 					m.CurrentPage += 1
 
@@ -221,8 +218,6 @@ func updateReadNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 		}
 		if key.Matches(keyMsg, m.Keys.Up) {
 			if m.ListModel.Index() == 0 && m.CurrentPage != 1 {
-				file.WriteLog("Apertou Down", "")
-				file.WriteLog(fmt.Sprintf("Current Page = %v", m.CurrentPage), "")
 				if hasPrevPage {
 					m.CurrentPage -= 1
 				}
