@@ -145,6 +145,8 @@ func updateInsertNoteState(msg tea.Msg, m *model.Model) (model.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
+	m.Textarea.SetWidth(m.TermWidth - (m.TermWidth / 10))
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
