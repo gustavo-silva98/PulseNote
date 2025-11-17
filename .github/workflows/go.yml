@@ -23,7 +23,19 @@ jobs:
         go-version: '1.25'
 
     - name: Run Rests and Create coverage report
-      run: go test ./... -coverprofile=coverage.txt
+      run: go test ./... -coverprofile=coverage.txt -covermode=atomic
+    
+    - name: Check coverage file
+      run: |
+        if [ ! -f coverage.txt ]; then
+          echo "coverage.txt não existe!"
+          exit 1
+        fi
+        
+        if [ ! -s coverage.txt ]; then
+          echo "coverage.txt está vazio!"
+          exit 1
+        fi
 
     - name: Upload results to Codecov
       uses: codecov/codecov-action@v5
